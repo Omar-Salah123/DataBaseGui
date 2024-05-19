@@ -1,17 +1,17 @@
 using System.Collections.Specialized;
+using System.Windows.Forms;
 
 namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
         string Table;
-        string working;
         public DatabaseHandler DB;
-        public Form1()
+        List<KeyValuePair<string, bool>> types;
+        public Form1(DatabaseHandler db)
         {
             InitializeComponent();
-            DB = new DatabaseHandler("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=FlightSystem;Integrated Security=True;Connect Timeout=30;Encrypt=false;");
-
+            DB = db;
         }
 
 
@@ -50,7 +50,7 @@ namespace WinFormsApp1
         {
             if (ListBox1.SelectedItem != null)
             {
-                Form2 f2 = new Form2(this, Table);
+                Form2 f2 = new Form2(this, Table, ListBox2);
                 f2.Show();
             }
         }
@@ -80,6 +80,58 @@ namespace WinFormsApp1
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            types = DB.GetColumNames(Table);
+            string deletee = ListBox2.SelectedItem.ToString();
+            string deleteeID = GetId(deletee);
+            DB.Delete(Table, types[0].Key, deleteeID);
+            DB.Refresh(Table, ListBox2);
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (ListBox1.SelectedItem != null && ListBox2.SelectedItem != null)
+            {
+                string Modified = ListBox2.SelectedItem.ToString();
+                string Mod = GetId(Modified);
+                Form3 f3 = new Form3(this, Table, Mod, ListBox2);
+                f3.Show();
+            }
+        }
+        private string GetId(string full)
+        {
+
+            string deleteeID = "'";
+            int i = 0;
+            char peek = full[i];
+            while (peek != ',')
+            {
+                deleteeID += full[i];
+                peek = full[i + 1];
+                i++;
+            }
+            deleteeID += "'";
+            return deleteeID;
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button5_Click_1(object sender, EventArgs e)
+        {
+        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

@@ -41,23 +41,87 @@ namespace WinFormsApp1
                 Connection.Open();
             }
         }
-        public void GetSchema(string Table, ListBox listbox) 
+        public void GetByID(string Table,string idname,string id,ListBox listbox) 
         {
             listbox.Items.Clear();
-            string queryString = $"SELECT * FROM {Table}";
+            string queryString = $"SELECT * FROM {Table} where {idname} = {id}";
 
+            using SqlDataReader reader = GetReaderFromQuery(queryString);
+            while (reader.Read())
+            {
+                string columndata;
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    columndata=reader[i].ToString();
+                    string Row = string.Join(", ", columndata);
+                    listbox.Items.Add(Row);
+                }
+                
+                
+            }
+        }
+        public void GetFlightsBetween(string firstDate, string secondDate,ListBox listbox)
+        {
+            listbox.Items.Clear();
+            string queryString = $"SELECT * FROM Flight where TakeOffDate between {firstDate} and {secondDate}";
+
+            using SqlDataReader reader = GetReaderFromQuery(queryString);
+            while (reader.Read())
+            {
+                List<string> columndata = new List<string>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    columndata.Add(reader[i].ToString());
+                }
+                string Row = string.Join(", ", columndata);
+                listbox.Items.Add(Row);
+            }
+        }
+        public List<KeyValuePair<string, bool>> GetColumNames(string Table) 
+        {
+            string queryString = $"SELECT TOP 1 * FROM {Table}";
+            List<KeyValuePair<string, bool>> types = new List<KeyValuePair<string, bool>>();
             using SqlDataReader reader = GetReaderFromQuery(queryString);
             DataTable schema = reader.GetSchemaTable();
             foreach (DataRow row in schema.Rows)
             {
                 List<string> columndata = new List<string>();
-                foreach (DataColumn column in schema.Columns)
-                {
-                    columndata.Add($"{row[column]}");
-                }
+                string columnName = row["ColumnName"].ToString();
+                string dataTypeName = row["DataTypeName"].ToString();
+                bool Identity = (bool)row["IsIdentity"];
+                string dataType = $"{columnName}";
+                types.Add(new KeyValuePair<string,bool> (dataType,Identity));
+                /*columndata.Add($"{row[0]}");
+                string datatybe = row["DataTypeName"].ToString();
                 string Row = string.Join(", ", columndata);
                 listbox.Items.Add(Row);
+                types.Add(datatybe);*/
             }
+            return types;
+        }
+        public List<KeyValuePair<string,bool>> GetSchema(string Table, ListBox listbox) 
+        {
+            listbox.Items.Clear();
+            string queryString = $"SELECT * FROM {Table}";
+            List<KeyValuePair<string, bool>> types = new List<KeyValuePair<string, bool>>();
+            using SqlDataReader reader = GetReaderFromQuery(queryString);
+            DataTable schema = reader.GetSchemaTable();
+            foreach (DataRow row in schema.Rows)
+            {
+                List<string> columndata = new List<string>();
+                string columnName = row["ColumnName"].ToString();
+                string dataTypeName = row["DataTypeName"].ToString();
+                bool Identity = (bool)row["IsIdentity"];
+                string dataType = $"{columnName}";
+                listbox.Items.Add(dataType);
+                types.Add(new KeyValuePair<string,bool>( dataTypeName,Identity));
+                /*columndata.Add($"{row[0]}");
+                string datatybe = row["DataTypeName"].ToString();
+                string Row = string.Join(", ", columndata);
+                listbox.Items.Add(Row);
+                types.Add(datatybe);*/
+            }
+            return types;
             /*foreach(DataRow row in schema.Rows) 
             {
                 List<string> columndata = new List<string>();
@@ -86,15 +150,20 @@ namespace WinFormsApp1
             }
             
         }
-        #region Update
-        public void Modify(string attribute, string newvalue, string id)
+        public void Delete(string table,string specifier,string ID)
         {
             EnsureConnection();
-            string queryString = "Update Customer Set @Attribute = @NewValue where ID = @id";
+            string query = $"Delete from {table} where {specifier} = {ID}";
+            SqlCommand command = new(query, Connection);
+            command.ExecuteNonQuery();
+
+        }
+        #region Update
+        public void Modify(string table,string attribute, string newvalue,string idname, string id)
+        {
+            EnsureConnection();
+            string queryString = $"Update {table} Set {attribute} = {newvalue} where {idname} = {id}";
             SqlCommand command = new(queryString, Connection);
-            command.Parameters.AddWithValue("@Attribute", attribute);
-            command.Parameters.AddWithValue("@Id", id);
-            command.Parameters.AddWithValue("@NewValue", newvalue);
             command.ExecuteNonQuery();
         }
         public void Push(string tble, string places, string Values)
